@@ -25,7 +25,7 @@ try {
 
 // Obtener configuración desde .env, config.json o valores predeterminados
 const PORT = process.env.SERVER_PORT || manualConfig.SERVER_PORT || 3000;
-const SERIAL_PORT = process.env.SERIAL_PORT || manualConfig.SERIAL_PORT || 'COM3';
+const SERIAL_PORT = process.env.SERIAL_PORT || manualConfig.SERIAL_PORT || 'COM15';
 const BAUD_RATE = parseInt(process.env.BAUD_RATE || manualConfig.BAUD_RATE || '9600');
 
 // Crear archivo de configuración si no existe
