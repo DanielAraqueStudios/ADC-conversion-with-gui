@@ -218,7 +218,7 @@ extern "C" {
             sprintf(text, "TEMP:%.2f\r\n", distancesharp);
             UART_Send_String(text);
             
-            // Toggle LED para indicar actividad
+            // Toggle LED PB7 para indicar actividad de muestreo
             GPIOB->ODR ^= (1<<7);
         }
     }
@@ -430,12 +430,12 @@ int main() {
         }
         
         if (flag == 1) {
-            // Modo de adquisición activo
-            GPIOB->ODR ^= (1<<0); // Toggle LED para indicar funcionamiento
+            // Modo de adquisición activo - LED PB0 parpadea
+            GPIOB->ODR ^= (1<<0);
             SysTick_ms(500);
         } else {
-            // Modo inactivo
-            GPIOB->ODR &= ~(1<<0); // LED apagado en modo inactivo
+            // Modo inactivo - LED PB0 apagado
+            GPIOB->ODR &= ~(1<<0);
             SysTick_ms(200);
         }
     }
