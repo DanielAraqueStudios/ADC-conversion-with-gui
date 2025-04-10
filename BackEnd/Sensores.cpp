@@ -2,6 +2,7 @@
 #include "stm32f7xx.h"
 #include <string.h>
 #include <stdlib.h>
+#include <cmath>
 
 // Flags y variables de control
 uint8_t flag = 0, i, cont = 0;
@@ -10,15 +11,15 @@ char text[64]; // Buffer para mensajes
 char cmd_buffer[32]; // Buffer para comandos recibidos
 uint8_t cmd_index = 0;
 
-// Variables ADC1 - Temperatura (PT100)
-uint16_t digital1;
-float voltaje1;
-double gradospt100;
+// Variables ADC2 - Temperatura (PT100)
+volatile uint16_t data_value_adc2;
+volatile float voltaje1;
+volatile double distancesharp;
 
 // Variables ADC2 - Peso (Celda de carga)
-uint16_t digital2;
-float voltaje2;
-double pesog;
+volatile uint16_t data_value_adc1;
+volatile float voltaje2;
+volatile double pesog;
 
 // Variables para control de tiempos
 uint32_t tiempo1 = 1; // Tiempo de muestreo para ADC2 (temperatura)
@@ -202,19 +203,19 @@ extern "C" {
             ADC2->CR2 |= (1<<30); // Iniciar conversión A/D
             while (((ADC2->SR & (1<<1)) >> 1) == 0) {} // Esperar a que termine la conversión
             ADC2->SR &= ~(1<<1); // Limpiar el flag EOC
-            digital1 = ADC2->DR;
-            voltaje1 = (float)digital1 * (3.3f / 4095.0f); // Corrección para resolución completa de 12 bits
-            gradospt100 = (30.305f * voltaje1);
+            data_value_adc2 = ADC2->DR;
+            voltaje2 = (float)data_value_adc2 * (3.3f / 4095.0f); // Corrección para resolución completa de 12 bits
+            distancesharp=25.63f*pow(voltaje2, -1.268f); // Conversión a distancia en cm
             
             // Aplicar filtro promedio si está activado
             if (filtro_temp) {
-                temp_buffer[temp_index] = gradospt100;
+                temp_buffer[temp_index] = distancesharp;
                 temp_index = (temp_index + 1) % temp_samples;
-                gradospt100 = calcularPromedio(temp_buffer, temp_samples);
+                distancesharp = calcularPromedio(temp_buffer, temp_samples);
             }
             
             // Enviar datos formateados por UART
-            sprintf(text, "TEMP:%.2f\r\n", gradospt100);
+            sprintf(text, "TEMP:%.2f\r\n", distancesharp);
             UART_Send_String(text);
             
             // Toggle LED para indicar actividad
@@ -232,9 +233,9 @@ extern "C" {
             ADC1->CR2 |= (1<<30); // Iniciar conversión A/D
             while (((ADC1->SR & (1<<1)) >> 1) == 0) {} // Esperar a que termine la conversión
             ADC1->SR &= ~(1<<1); // Limpiar el flag EOC
-            digital2 = ADC1->DR;
-            voltaje2 = (float)digital2 * (3.3f / 1023.0f); // Corrección para resolución completa de 10 bits
-            pesog = (voltaje2 * 303.03f);
+            data_value_adc1 = ADC1->DR;
+            voltaje1 = data_value_adc1 * (3.3 / 990); // Corrección para resolución completa de 10 bits
+            pesog = (voltaje1 * 303.03f);
             
             // Aplicar filtro promedio si está activado
             if (filtro_peso) {
@@ -353,7 +354,7 @@ int main() {
     RCC->APB2ENR |= (1<<8); // Habilitar reloj ADC1
     ADC1->CR2 |= ((1<<10) | (1<<0)); // EOCS y ADC Enable
     ADC1->CR1 &= ~(0b11<<24); // limpiar bits de resolución
-    ADC1->CR1 |= (0b01<<24); // Resolución a 10 bits
+    ADC1->CR1 |= (1<<24); // Resolución a 10 bits
     ADC1->SMPR1 |= (0b111<<12); // Tiempo de muestreo máximo
     ADC1->SQR3 = 14; // Canal 14 para PC4
     
