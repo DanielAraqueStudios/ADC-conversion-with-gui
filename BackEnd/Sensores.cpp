@@ -218,8 +218,8 @@ extern "C" {
             sprintf(text, "TEMP:%.2f\r\n", distancesharp);
             UART_Send_String(text);
             
-            // Toggle LED PB7 para indicar actividad de muestreo
-            GPIOB->ODR ^= (1<<7);
+            // Toggle LED PB14 para indicar actividad de muestreo
+            GPIOB->ODR ^= (1<<14);
         }
     }
 
@@ -294,12 +294,12 @@ int main() {
     // ----- Configuración de GPIOs -----
     RCC->AHB1ENR |= ((1<<1) | (1<<2)); // Habilitar reloj para GPIOB y GPIOC
     
-    // Configurar GPIOB pins 0 y 7 como salidas (LEDs)
-    GPIOB->MODER &= ~((0b11<<0) | (0b11<<14));
-    GPIOB->MODER |= ((1<<0) | (1<<14)); 
-    GPIOB->OTYPER &= ~((1<<0) | (1<<7)); // Push-pull
-    GPIOB->OSPEEDR |= (((1<<1) | (1<<0) | (1<<15) | (1<<14))); // Alta velocidad
-    GPIOB->PUPDR &= ~((0b11<<0) | (0b11<<14)); // Sin pull-up/down
+    // Configurar GPIOB pins 0 y 14 como salidas (LEDs)
+    GPIOB->MODER &= ~((0b11<<0) | (0b11<<28));
+    GPIOB->MODER |= ((1<<0) | (1<<28)); 
+    GPIOB->OTYPER &= ~((1<<0) | (1<<14)); // Push-pull
+    GPIOB->OSPEEDR |= (((1<<1) | (1<<0) | (1<<29) | (1<<28))); // Alta velocidad
+    GPIOB->PUPDR &= ~((0b11<<0) | (0b11<<28)); // Sin pull-up/down
     
     // Configurar GPIOC pin 13 como entrada (botón)
     GPIOC->MODER &= ~(0b11<<26);
