@@ -16,14 +16,14 @@ volatile uint16_t data_value_adc2;
 volatile float voltaje1;
 volatile double distancesharp;
 
-// Variables ADC2 - Peso (Celda de carga)
+// Variables ADC2 - intensidad lumínica
 volatile uint16_t data_value_adc1;
 volatile float voltaje2;
 volatile double pesog;
 
 // Variables para control de tiempos
 uint32_t tiempo1 = 1; // Tiempo de muestreo para ADC2 (distancia sharp)
-uint32_t tiempo2 = 1; // Tiempo de muestreo para ADC1 (peso)
+uint32_t tiempo2 = 1; // Tiempo de muestreo para ADC1 (intensidad lumínica)
 char time_unit = 's'; // 'm' para ms, 's' para segundos, 'M' para minutos
 
 // Variables para filtro promedio
@@ -33,7 +33,7 @@ float peso_buffer[MAX_SAMPLES];
 uint8_t temp_index = 0;
 uint8_t peso_index = 0;
 uint8_t temp_samples = 10; // Número de muestras por defecto para distancia sharp
-uint8_t peso_samples = 10; // Número de muestras por defecto para peso
+uint8_t peso_samples = 10; // Número de muestras por defecto para intensidad lumínica
 uint8_t filtro_temp = 0;   // 0: Sin filtro, 1: Con filtro
 uint8_t filtro_peso = 0;   // 0: Sin filtro, 1: Con filtro
 
@@ -120,7 +120,7 @@ void procesar_comando(const char* cmd) {
             UART_Send_String(text);
         }
     } else if (strcmp(tipo, "T2") == 0) {
-        // Cambiar tiempo de muestreo para peso
+        // Cambiar tiempo de muestreo para intensidad lumínica
         int val = atoi(valor);
         if (val > 0) {
             tiempo2 = val;
@@ -128,7 +128,7 @@ void procesar_comando(const char* cmd) {
             UART_Send_String(text);
             
             // Debug - confirmar el comando recibido
-            sprintf(text, "DEBUG:Tiempo peso actualizado a %lu %c\r\n", tiempo2, time_unit);
+            sprintf(text, "DEBUG:Tiempo intensidad lumínica actualizado a %lu %c\r\n", tiempo2, time_unit);
             UART_Send_String(text);
         }
     } else if (strcmp(tipo, "TU") == 0) {
@@ -148,7 +148,7 @@ void procesar_comando(const char* cmd) {
         sprintf(text, "OK:FT:%d\r\n", filtro_temp);
         UART_Send_String(text);
     } else if (strcmp(tipo, "FP") == 0) {
-        // Filtro peso (0=off, 1=on)
+        // Filtro intensidad lumínica (0=off, 1=on)
         filtro_peso = (atoi(valor) == 0) ? 0 : 1;
         sprintf(text, "OK:FP:%d\r\n", filtro_peso);
         UART_Send_String(text);
@@ -161,7 +161,7 @@ void procesar_comando(const char* cmd) {
             UART_Send_String(text);
         }
     } else if (strcmp(tipo, "SP") == 0) {
-        // Muestras para filtro peso
+        // Muestras para filtro intensidad lumínica
         int val = atoi(valor);
         if (val > 0 && val <= MAX_SAMPLES) {
             peso_samples = val;
@@ -223,13 +223,13 @@ extern "C" {
         }
     }
 
-    // Interrupción del Timer 5 - Muestreo de peso
+    // Interrupción del Timer 5 - Muestreo de intensidad lumínica
     void TIM5_IRQHandler(void) { 
         TIM5->SR &= ~(1<<0); // Limpiar el flag de interrupción del TIM5
         
         // Solo enviar datos si la adquisición está activa
         if (flag) {
-            // Tomar lectura del ADC1 (peso)
+            // Tomar lectura del ADC1 (intensidad lumínica)
             ADC1->CR2 |= (1<<30); // Iniciar conversión A/D
             while (((ADC1->SR & (1<<1)) >> 1) == 0) {} // Esperar a que termine la conversión
             ADC1->SR &= ~(1<<1); // Limpiar el flag EOC
@@ -245,7 +245,7 @@ extern "C" {
             }
             
             // Enviar datos formateados por UART
-            sprintf(text, "PESO:%.2f\r\n", pesog);
+            sprintf(text, "intensidad lumínica:%.2f\r\n", pesog);
             UART_Send_String(text);
         }
     }
@@ -348,7 +348,7 @@ int main() {
     ADC2->SMPR1 |= (0b111<<6); // Tiempo de muestreo máximo
     ADC2->SQR3 = 9; // Canal 9 para PB1
     
-    // ----- Configuración de ADC1 para PC4 (peso) -----
+    // ----- Configuración de ADC1 para PC4 intensidad lumínica) -----
     GPIOC->MODER |= (0b11<<8); // PC4 como entrada analógica
     
     RCC->APB2ENR |= (1<<8); // Habilitar reloj ADC1
@@ -368,7 +368,7 @@ int main() {
     // Habilitar interrupción TIM2 en NVIC
     NVIC_EnableIRQ(TIM2_IRQn); 
     
-    // ----- Configuración de Timer 5 para muestreo de peso -----
+    // ----- Configuración de Timer 5 para muestreo de intensidad lumínica -----
     RCC->APB1ENR |= (1<<3); // Habilitar reloj TIM5
     TIM5->PSC = 16000 - 1; // Prescaler para 1ms a 16MHz
     TIM5->ARR = 1000; // Periodo inicial (1s)
@@ -425,7 +425,7 @@ int main() {
             TIM5->CR1 |= (1<<0); // Habilitar timer
             
             // Informar del cambio
-            sprintf(text, "INFO:Timer peso actualizado: %lu ms\r\n", arr_value2);
+            sprintf(text, "INFO:Timer intensidad lumínica actualizado: %lu ms\r\n", arr_value2);
             UART_Send_String(text);
         }
         
