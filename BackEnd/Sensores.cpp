@@ -215,7 +215,7 @@ extern "C" {
             }
             
             // Enviar datos formateados por UART
-            sprintf(text, "TEMP:%.2f\r\n", distancesharp);
+            sprintf(text, "DIST:%.2f\r\n", distancesharp);
             UART_Send_String(text);
             
             // Toggle LED PB14 para indicar actividad de muestreo
@@ -414,7 +414,7 @@ int main() {
             TIM2->CR1 |= (1<<0); // Habilitar timer
             
             // Informar del cambio
-            sprintf(text, "INFO:Timer temp actualizado: %lu ms\r\n", arr_value1);
+            sprintf(text, "INFO:Timer distancia actualizado: %lu ms\r\n", arr_value1);
             UART_Send_String(text);
         }
         
