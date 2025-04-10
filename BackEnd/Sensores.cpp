@@ -235,7 +235,7 @@ extern "C" {
             ADC1->SR &= ~(1<<1); // Limpiar el flag EOC
             data_value_adc1 = ADC1->DR;
             voltaje1 = data_value_adc1 * (3.3 / 990); // Corrección para resolución completa de 10 bits
-            pesog = (voltaje1 * 303.03f);
+            pesog = (3.3-voltaje1) /0.03; // Conversión a lux (ajustar según la fórmula real)
             
             // Aplicar filtro promedio si está activado
             if (filtro_peso) {
