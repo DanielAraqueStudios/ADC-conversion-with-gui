@@ -11,7 +11,7 @@ char text[64]; // Buffer para mensajes
 char cmd_buffer[32]; // Buffer para comandos recibidos
 uint8_t cmd_index = 0;
 
-// Variables ADC2 - Temperatura (PT100)
+// Variables ADC2 - distancia sharp
 volatile uint16_t data_value_adc2;
 volatile float voltaje1;
 volatile double distancesharp;
@@ -22,7 +22,7 @@ volatile float voltaje2;
 volatile double pesog;
 
 // Variables para control de tiempos
-uint32_t tiempo1 = 1; // Tiempo de muestreo para ADC2 (temperatura)
+uint32_t tiempo1 = 1; // Tiempo de muestreo para ADC2 (distancia sharp)
 uint32_t tiempo2 = 1; // Tiempo de muestreo para ADC1 (peso)
 char time_unit = 's'; // 'm' para ms, 's' para segundos, 'M' para minutos
 
@@ -32,7 +32,7 @@ float temp_buffer[MAX_SAMPLES];
 float peso_buffer[MAX_SAMPLES];
 uint8_t temp_index = 0;
 uint8_t peso_index = 0;
-uint8_t temp_samples = 10; // Número de muestras por defecto para temperatura
+uint8_t temp_samples = 10; // Número de muestras por defecto para distancia sharp
 uint8_t peso_samples = 10; // Número de muestras por defecto para peso
 uint8_t filtro_temp = 0;   // 0: Sin filtro, 1: Con filtro
 uint8_t filtro_peso = 0;   // 0: Sin filtro, 1: Con filtro
@@ -108,7 +108,7 @@ void procesar_comando(const char* cmd) {
     
     // Procesar comandos con valores
     if (strcmp(tipo, "T1") == 0) {
-        // Cambiar tiempo de muestreo para temperatura
+        // Cambiar tiempo de muestreo para distancia sharp
         int val = atoi(valor);
         if (val > 0) {
             tiempo1 = val;
@@ -116,7 +116,7 @@ void procesar_comando(const char* cmd) {
             UART_Send_String(text);
             
             // Debug - confirmar el comando recibido
-            sprintf(text, "DEBUG:Tiempo temperatura actualizado a %lu %c\r\n", tiempo1, time_unit);
+            sprintf(text, "DEBUG:Tiempo distancia sharp actualizado a %lu %c\r\n", tiempo1, time_unit);
             UART_Send_String(text);
         }
     } else if (strcmp(tipo, "T2") == 0) {
@@ -143,7 +143,7 @@ void procesar_comando(const char* cmd) {
             UART_Send_String(text);
         }
     } else if (strcmp(tipo, "FT") == 0) {
-        // Filtro temperatura (0=off, 1=on)
+        // Filtro distancia sharp (0=off, 1=on)
         filtro_temp = (atoi(valor) == 0) ? 0 : 1;
         sprintf(text, "OK:FT:%d\r\n", filtro_temp);
         UART_Send_String(text);
@@ -153,7 +153,7 @@ void procesar_comando(const char* cmd) {
         sprintf(text, "OK:FP:%d\r\n", filtro_peso);
         UART_Send_String(text);
     } else if (strcmp(tipo, "ST") == 0) {
-        // Muestras para filtro temperatura
+        // Muestras para filtro distancia sharp
         int val = atoi(valor);
         if (val > 0 && val <= MAX_SAMPLES) {
             temp_samples = val;
@@ -193,13 +193,13 @@ extern "C" {
         }
     }
 
-    // Interrupción del Timer 2 - Muestreo de temperatura
+    // Interrupción del Timer 2 - Muestreo dedistancia sharp
     void TIM2_IRQHandler(void) { 
         TIM2->SR &= ~(1<<0); // Limpiar el flag de interrupción del TIM2
         
         // Solo enviar datos si la adquisición está activa
         if (flag) {
-            // Tomar lectura del ADC2 (temperatura)
+            // Tomar lectura del ADC2 distancia sharp
             ADC2->CR2 |= (1<<30); // Iniciar conversión A/D
             while (((ADC2->SR & (1<<1)) >> 1) == 0) {} // Esperar a que termine la conversión
             ADC2->SR &= ~(1<<1); // Limpiar el flag EOC
@@ -339,7 +339,7 @@ int main() {
     // Habilitar interrupción USART3 en NVIC
     NVIC_EnableIRQ(USART3_IRQn); 
     
-    // ----- Configuración de ADC2 para PB1 (temperatura) -----
+    // ----- Configuración de ADC2 para PB1 (distancia) -----
     GPIOB->MODER |= (0b11<<2); // PB1 como entrada analógica
     
     RCC->APB2ENR |= (1<<9); // Habilitar reloj ADC2
@@ -358,7 +358,7 @@ int main() {
     ADC1->SMPR1 |= (0b111<<12); // Tiempo de muestreo máximo
     ADC1->SQR3 = 14; // Canal 14 para PC4
     
-    // ----- Configuración de Timer 2 para muestreo de temperatura -----
+    // ----- Configuración de Timer 2 para muestreo de distancia -----
     RCC->APB1ENR |= (1<<0); // Habilitar reloj TIM2
     TIM2->PSC = 16000 - 1; // Prescaler para 1ms a 16MHz
     TIM2->ARR = 1000; // Periodo inicial (1s)
